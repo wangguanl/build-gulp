@@ -1,7 +1,10 @@
 .DS_Store
 node_modules
 /dist
+/dest
 /src
+/src2
+/log
 
 # local env files
 .env.local
