@@ -32,9 +32,9 @@ const config = {
 		commonScss: ['src/assets/css/common.scss', 'src/assets/css/page.scss'],
 		utilsJS: ['src/assets/utils/**'],
 		commonJS: ['src/assets/js/**'],
-		output: __dirname + '/dist/assets'
+		output: __dirname + '/server/assets'
 	},
-	output: __dirname + '/dist', // 打包路径,
+	output: __dirname + '/server', // 打包路径,
 }
 
 
@@ -162,7 +162,7 @@ gulp.task('browserSync', function() {
 		server: {
 			baseDir: config.output
 		},
-		port: 9997
+		port: 8081
 	});
 	gulp.watch(['src/**'], gulp.parallel('pipeLibs', 'concatResetCss', 'concatCommonScss', 'concatUtilsJs',
 		'concatCommonJS',

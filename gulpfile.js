@@ -1,7 +1,7 @@
 /*
     create by Mr.Wang 2020/02/22
     * 功能说明
-        1、此文件只用于打包， 开发环境请自行配置。
+        1、功能：1打包、2启动服务。
         2、压缩CSS并且生成新的版本号
         3、压缩JS并且对es6+的语法转换为es5
         4、压缩HTML、img文件
@@ -18,7 +18,8 @@
 
     
     * 依赖模块安装成功后
-        $ gulp 运行命令进行打包。
+        $ gulp build 运行命令进行打包。
+        $ gulp server 运行命令进行启动服务。
 
  */
 /*
@@ -36,9 +37,11 @@ const config = {
 		commonScss: ['src/assets/css/common.scss', 'src/assets/css/page.scss'],
 		utilsJS: ['src/assets/utils/**'],
 		commonJS: ['src/assets/js/**'],
-		output: __dirname + '/build/assets'
+		buildoutput: __dirname + '/build/assets',
+		serveroutput: __dirname + '/server/assets'
 	},
-	output: __dirname + '/build', // 打包路径,
+	buildoutput: __dirname + '/build', // 打包路径,
+	serveroutput: __dirname + '/server',
 	log: __dirname + '/log' // 打包的日志文件
 }
 
@@ -46,6 +49,8 @@ const config = {
 
 // 引入依赖模块
 const gulp = require('gulp'),
+	browserSync = require('browser-sync'),
+	reload = browserSync.reload,
 	concat = require('gulp-concat'),
 	// 压缩html
 	htmlMin = require("gulp-htmlmin"),
@@ -71,54 +76,55 @@ const gulp = require('gulp'),
 	filter = require('gulp-filter'); // 筛选文件
 
 
+
 // 传输所有未处理的文件
 gulp.task('removeDir', done => {
-	removeDir(config.output); // 先删除打包路径，再打包
+	removeDir(config.buildoutput); // 先删除打包路径，再打包
 	removeDir(config.log); // 先删除日志路径
 	done();
 })
-gulp.task('pipeLibs', function() {
+gulp.task('buildpipeLibs', function() {
 	return gulp.src(['src/static/**', '!src/static/include/**'])
-		.pipe(gulp.dest(config.output + '/static'))
+		.pipe(gulp.dest(config.buildoutput + '/static'))
 		
 })
 
-gulp.task('pipeImages', function() {
+gulp.task('buildpipeImages', function() {
 	return gulp.src(['src/static/images/**'])
 		.pipe(tinypng({
 			key: '6Mf5s28SQC8yHydFMtSFcdpDFswd0ssd',
 		}))
-		.pipe(gulp.dest(config.output + '/static/images'))
+		.pipe(gulp.dest(config.buildoutput + '/static/images'))
 		
 })
 
 
 // 合并CSS
-gulp.task('concatResetCss', function() {
+gulp.task('buildconcatResetCss', function() {
 	return gulp.src(config.concat.resetCss)
 		.pipe(concat('reset.css'))
 		.pipe(cleanCSS())
 		.pipe(rev()) //文件名加MD5后缀
-		.pipe(gulp.dest(config.concat.output))
+		.pipe(gulp.dest(config.concat.buildoutput))
 		.pipe(rev.manifest('rev-concat-css-manifest-log.json')) //生成一个rev-manifest.json
 		.pipe(gulp.dest(config.log)) //将 rev-manifest.json 保存到 log 目录内
 })
 
 // 合并SCSS
-gulp.task('concatCommonScss', function() {
+gulp.task('buildconcatCommonScss', function() {
 	return gulp.src(config.concat.commonScss)
 		.pipe(concat('common.scss'))
 		.pipe(sass().on('error', sass.logError)) // sass编译
 		.pipe(postcss([autoprefixer()])) // 添加前缀
 		.pipe(cleanCSS())
 		.pipe(rev()) //文件名加MD5后缀
-		.pipe(gulp.dest(config.concat.output))
+		.pipe(gulp.dest(config.concat.buildoutput))
 		.pipe(rev.manifest('rev-concat-scss-manifest-log.json')) //生成一个rev-manifest.json
 		.pipe(gulp.dest(config.log)) //将 rev-manifest.json 保存到 log 目录内
 })
 
 // 合并Utils
-gulp.task('concatUtilsJs', function() {
+gulp.task('buildconcatUtilsJs', function() {
 	return gulp.src(config.concat.utilsJS)
 		.pipe(concat('utils.js'))
 		.pipe(stripDebug())
@@ -128,14 +134,14 @@ gulp.task('concatUtilsJs', function() {
 		}))
 		.pipe(uglify())
 		.pipe(rev()) //文件名加MD5后缀
-		.pipe(gulp.dest(config.concat.output))
+		.pipe(gulp.dest(config.concat.buildoutput))
 		.pipe(rev.manifest('rev-concat-utilsjs-manifest-log.json')) //生成一个rev-manifest.json
 		.pipe(gulp.dest(config.log)) //将 rev-manifest.json 保存到 rev 目录内
 
 
 })
 // 合并js
-gulp.task('concatCommonJS', function() {
+gulp.task('buildconcatCommonJS', function() {
 
 	return gulp.src(config.concat.commonJS)
 		.pipe(concat('common.js'))
@@ -146,25 +152,25 @@ gulp.task('concatCommonJS', function() {
 		}))
 		.pipe(uglify())
 		.pipe(rev()) //文件名加MD5后缀
-		.pipe(gulp.dest(config.concat.output))
+		.pipe(gulp.dest(config.concat.buildoutput))
 		.pipe(rev.manifest('rev-concat-commonjs-manifest-log.json')) //生成一个rev-manifest.json
 		.pipe(gulp.dest(config.log)) //将 rev-manifest.json 保存到 rev 目录内
 })
 
-gulp.task('scss', function() {
+gulp.task('buildscss', function() {
 	return gulp.src(config.enter.scss)
 		.pipe(sass().on('error', sass.logError)) // sass编译
 		.pipe(postcss([autoprefixer()])) // 添加前缀
 		.pipe(cleanCSS()) // 压缩
 		.pipe(rev()) //文件名加MD5后缀
-		.pipe(gulp.dest(config.output))
+		.pipe(gulp.dest(config.buildoutput))
 		.pipe(rev.manifest('rev-css-manifest-log.json')) //生成一个rev-manifest.json
 		.pipe(gulp.dest(config.log)) //将 rev-manifest.json 保存到 log 目录内
 
 })
 
 
-gulp.task('js', function() {
+gulp.task('buildjs', function() {
 	return gulp.src(config.enter.js)
 		.pipe(stripDebug())
 		.pipe(babel({
@@ -173,14 +179,14 @@ gulp.task('js', function() {
 		}))
 		.pipe(uglify()) // 压缩
 		.pipe(rev()) //文件名加MD5后缀
-		.pipe(gulp.dest(config.output))
+		.pipe(gulp.dest(config.buildoutput))
 		.pipe(rev.manifest('rev-js-manifest-log.json')) //生成一个rev-manifest.json
 		.pipe(gulp.dest(config.log)) //将 rev-manifest.json 保存到 rev 目录内
 })
 
 
 
-gulp.task('html', function() {
+gulp.task('buildhtml', function() {
 
 	const options = {
 		removeComments: true, //清除HTML注释
@@ -198,24 +204,169 @@ gulp.task('html', function() {
 			basepath: 'src/static/include', //引用文件路径
 		}))
 		.pipe(htmlMin(options))
-		.pipe(gulp.dest(config.output))
+		.pipe(gulp.dest(config.buildoutput))
 });
 
-gulp.task('revAll', function() {
-	return gulp.src(['log/*.json', config.output + '/**/*.html'])
+gulp.task('buildrevAll', function() {
+	return gulp.src(['log/*.json', config.buildoutput + '/**/*.html'])
 		.pipe(revCollector({ //替换html中对应的记录 
 			replaceReved: true
 		}))
-		.pipe(gulp.dest(config.output)) //输出到该文件夹中  
+		.pipe(gulp.dest(config.buildoutput)) //输出到该文件夹中  
 })
 
-gulp.task('default', gulp.series('removeDir', gulp.parallel('pipeLibs', 'concatResetCss', 'concatCommonScss',
-	'concatUtilsJs',
-	'concatCommonJS',
-	'scss',
-	'js', 'html'), 'revAll', done => done()))
+gulp.task('build', gulp.series('removeDir', gulp.parallel('buildpipeLibs', 'buildconcatResetCss', 'buildconcatCommonScss',
+	'buildconcatUtilsJs',
+	'buildconcatCommonJS',
+	'buildscss',
+	'buildjs', 'buildhtml'), 'buildrevAll', done => done()))
 
 
+
+
+
+// 传输所有未处理的文件
+gulp.task('serverpipeLibs', function() {
+	return gulp.src(['src/static/**', '!src/static/include/**'])
+		.pipe(gulp.dest(config.serveroutput + '/static'))
+		.pipe(reload({
+			stream: true
+		}));
+})
+
+// 合并CSS
+gulp.task('serverconcatResetCss', function() {
+	return gulp.src(config.concat.resetCss)
+		.pipe(concat('reset.css'))
+		.pipe(cleanCSS())
+		.pipe(gulp.dest(config.concat.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+})
+
+// 合并SCSS
+gulp.task('serverconcatCommonScss', function() {
+	return gulp.src(config.concat.commonScss)
+		.pipe(concat('common.scss'))
+		.pipe(sass().on('error', sass.logError)) // sass编译
+		.pipe(postcss([autoprefixer()])) // 添加前缀
+		.pipe(cleanCSS())
+		.pipe(gulp.dest(config.concat.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+})
+
+// 合并Utils
+gulp.task('serverconcatUtilsJs', function() {
+	return gulp.src(config.concat.utilsJS)
+		.pipe(concat('utils.js'))
+		.pipe(stripDebug())
+		.pipe(babel({
+			presets: ['@babel/env'],
+			plugins: [],
+		}))
+		.pipe(uglify())
+		.pipe(gulp.dest(config.concat.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+
+})
+// 合并js
+gulp.task('serverconcatCommonJS', function() {
+
+	return gulp.src(config.concat.commonJS)
+		.pipe(concat('common.js'))
+		.pipe(stripDebug())
+		.pipe(babel({
+			presets: ['@babel/env'],
+			plugins: [],
+		}))
+		.pipe(uglify())
+		.pipe(gulp.dest(config.concat.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+})
+
+gulp.task('serverscss', function() {
+	return gulp.src(config.enter.scss)
+		.pipe(sass().on('error', sass.logError)) // sass编译
+		.pipe(postcss([autoprefixer()])) // 添加前缀
+		.pipe(cleanCSS()) // 压缩
+		.pipe(gulp.dest(config.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+})
+
+gulp.task('serverjs', function() {
+
+	return gulp.src(config.enter.js)
+		.pipe(babel({
+			presets: ['@babel/env'],
+			plugins: [],
+		}))
+		.pipe(uglify()) // 压缩
+		.pipe(gulp.dest(config.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+})
+
+
+
+gulp.task('serverhtml', function() {
+
+	const options = {
+		removeComments: true, //清除HTML注释
+		collapseWhitespace: true, //压缩HTML
+		collapseBooleanAttributes: true, //省略布尔属性的值 <input checked="true"/> ==> <input />
+		removeEmptyAttributes: true, //删除所有空格作属性值 <input id="" /> ==> <input />
+		removeScriptTypeAttributes: true, //删除<script>的type="text/javascript"
+		removeStyleLinkTypeAttributes: true, //删除<style>和<link>的type="text/css"
+		minifyJS: true, //压缩页面JS
+		minifyCSS: true //压缩页面CSS
+	};
+	return gulp.src(config.enter.html)
+		.pipe(fileinclude({
+			prefix: '@@',
+			basepath: 'src/static/include',//引用文件路径
+		}))
+		.pipe(htmlMin(options))
+		.pipe(gulp.dest(config.serveroutput))
+		.pipe(reload({
+			stream: true
+		}));
+});
+
+gulp.task('browserSync', function() {
+	browserSync({
+		server: {
+			baseDir: config.serveroutput
+		},
+		port: 8081
+	});
+	gulp.watch(['src/**'], gulp.parallel('serverpipeLibs', 'serverconcatResetCss', 'serverconcatCommonScss', 'serverconcatUtilsJs',
+		'serverconcatCommonJS',
+		'serverscss',
+		'serverjs', 'serverhtml'))
+})
+
+gulp.task('serverpipeFile', gulp.parallel('serverpipeLibs', 'serverconcatResetCss', 'serverconcatCommonScss', 'serverconcatUtilsJs',
+	'serverconcatCommonJS',
+	'serverscss',
+	'serverjs', 'serverhtml',
+	function(done) {
+		done();
+	}))
+
+gulp.task('server', gulp.series('serverpipeFile', 'browserSync',
+	function(done) {
+		done();
+	}));
 
 const fs = require('fs'); // node内置模块 fileSystem
 function removeDir(path) {
