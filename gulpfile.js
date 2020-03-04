@@ -126,7 +126,7 @@ gulp.task('buildconcatCommonScss', function() {
 // 合并Utils
 gulp.task('buildconcatUtilsJs', function() {
 	return gulp.src(config.concat.utilsJS)
-		.pipe(concat('utils.js'))
+		// .pipe(concat('utils.js'))
 		.pipe(stripDebug())
 		.pipe(babel({
 			presets: ['@babel/env'],
@@ -261,7 +261,7 @@ gulp.task('serverconcatCommonScss', function() {
 // 合并Utils
 gulp.task('serverconcatUtilsJs', function() {
 	return gulp.src(config.concat.utilsJS)
-		.pipe(concat('utils.js'))
+		// .pipe(concat('utils.js'))
 		.pipe(stripDebug())
 		.pipe(babel({
 			presets: ['@babel/env'],
