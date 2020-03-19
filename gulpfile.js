@@ -262,7 +262,6 @@ gulp.task('serverconcatCommonScss', function() {
 gulp.task('serverconcatUtilsJs', function() {
 	return gulp.src(config.concat.utilsJS)
 		// .pipe(concat('utils.js'))
-		.pipe(stripDebug())
 		.pipe(babel({
 			presets: ['@babel/env'],
 			plugins: [],
@@ -279,7 +278,6 @@ gulp.task('serverconcatCommonJS', function() {
 
 	return gulp.src(config.concat.commonJS)
 		.pipe(concat('common.js'))
-		.pipe(stripDebug())
 		.pipe(babel({
 			presets: ['@babel/env'],
 			plugins: [],
