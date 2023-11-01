@@ -1,11 +1,35 @@
-const gulp = require("gulp"),
-  browserSync = require("browser-sync"),
+/*
+	create by Mr.Wang 2020/02/22
+	* 功能说明
+		1、此文件用于配置开发环境。
+		2、解析SCSS为CSS
+    3、修改文件后自动刷新页面
+	运行文件请先下载依赖模块：
+	
+	* 存在package.json文件
+		$ npm install
+	
+	* 安装成功后出现node_modules，若想删除node_modules这个文件夹，可直接删除， 或下载rimraf模块
+		1、$ npm|cnpm install -g rimraf  // 下载rimraf模块
+		2、$ rimraf node_modules // 删除node_modules
+
+	
+	* 依赖模块安装成功后
+		$ gulp 运行命令进行打包。
+
+ */
+
+const gulp = require('gulp'),
+  browserSync = require('browser-sync'),
   reload = browserSync.reload,
-  concat = require("gulp-concat"),
+  concat = require('gulp-concat'),
   // htmlMin = require("gulp-htmlmin"),
-  fileinclude = require("gulp-file-include"),
+  fileInclude = require('gulp-file-include'),
   // 压缩css
-  sass = require("gulp-dart-sass");
+  sass = require('gulp-dart-sass'),
+  removeDir = require('./utils/removeDir'),
+  Path = require('path'),
+  commonConfig = require('./config/common');
 // postcss = require('gulp-postcss'),
 // autoprefixer = require('autoprefixer'),
 // cleanCSS = require('gulp-clean-css'),
@@ -18,29 +42,19 @@ const gulp = require("gulp"),
 /*
     文件路径配置
  */
-const config = {
-  enter: {
-    // 文件路径
-    html: ["src/**/*.html", "!src/assets/**", "!src/static/**"],
-    scss: ["src/**/*.scss", "!src/assets/**", "!src/static/**"],
-    js: ["src/**/*.js", "!src/assets/**", "!src/static/**"],
-  },
-  // 合并文件路径
-  concat: {
-    resetCss: ["src/assets/css/reset.css"],
-    commonScss: ["src/assets/css/common.scss", "src/assets/css/page.scss"],
-    utilsJS: ["src/assets/utils/**"],
-    commonJS: ["src/assets/js/**"],
-    output: __dirname + "/server/assets",
-  },
-  output: __dirname + "/server", // 打包路径,
-};
+const rootPath = Path.join(__dirname, '../');
+const output = rootPath + '/dist/server';
+const config = commonConfig(output);
 
+gulp.task('removeDir', done => {
+  removeDir(config.output); // 先删除打包路径，再打包
+  done();
+});
 // 传输所有未处理的文件
-gulp.task("pipeLibs", function () {
+gulp.task('pipeLibs', function () {
   return gulp
-    .src(["src/static/**", "!src/static/include/**"])
-    .pipe(gulp.dest(config.output + "/static"))
+    .src(config.enter.libs)
+    .pipe(gulp.dest(config.output + '/static'))
     .pipe(
       reload({
         stream: true,
@@ -49,11 +63,11 @@ gulp.task("pipeLibs", function () {
 });
 
 // 合并CSS
-gulp.task("concatResetCss", function () {
+gulp.task('concatResetCss', function () {
   return (
     gulp
       .src(config.concat.resetCss)
-      .pipe(concat("reset.css"))
+      .pipe(concat('reset.css'))
       // .pipe(cleanCSS())
       .pipe(gulp.dest(config.concat.output))
       .pipe(
@@ -65,12 +79,12 @@ gulp.task("concatResetCss", function () {
 });
 
 // 合并SCSS
-gulp.task("concatCommonScss", function () {
+gulp.task('concatCommonScss', function () {
   return (
     gulp
       .src(config.concat.commonScss)
-      .pipe(concat("common.scss"))
-      .pipe(sass().on("error", sass.logError)) // sass编译
+      .pipe(concat('common.scss'))
+      .pipe(sass().on('error', sass.logError)) // sass编译
       // .pipe(postcss([autoprefixer()])) // 添加前缀
       // .pipe(cleanCSS())
       .pipe(gulp.dest(config.concat.output))
@@ -83,11 +97,11 @@ gulp.task("concatCommonScss", function () {
 });
 
 // 合并Utils
-gulp.task("concatUtilsJs", function () {
+gulp.task('concatUtilsJs', function () {
   return (
     gulp
       .src(config.concat.utilsJS)
-      .pipe(concat("utils.js"))
+      // .pipe(concat('utils.js'))
       // .pipe(stripDebug())
       /* .pipe(babel({
 			presets: ['@babel/env'],
@@ -103,11 +117,11 @@ gulp.task("concatUtilsJs", function () {
   );
 });
 // 合并js
-gulp.task("concatCommonJS", function () {
+gulp.task('concatCommonJS', function () {
   return (
     gulp
       .src(config.concat.commonJS)
-      .pipe(concat("common.js"))
+      .pipe(concat('common.js'))
       // .pipe(stripDebug())
       /* .pipe(babel({
 			presets: ['@babel/env'],
@@ -123,11 +137,11 @@ gulp.task("concatCommonJS", function () {
   );
 });
 
-gulp.task("scss", function () {
+gulp.task('scss', function () {
   return (
     gulp
       .src(config.enter.scss)
-      .pipe(sass().on("error", sass.logError)) // sass编译
+      .pipe(sass().on('error', sass.logError)) // sass编译
       // .pipe(postcss([autoprefixer()])) // 添加前缀
       // .pipe(cleanCSS()) // 压缩
       .pipe(gulp.dest(config.output))
@@ -139,7 +153,7 @@ gulp.task("scss", function () {
   );
 });
 
-gulp.task("js", function () {
+gulp.task('js', function () {
   return (
     gulp
       .src(config.enter.js)
@@ -157,7 +171,7 @@ gulp.task("js", function () {
   );
 });
 
-gulp.task("html", function () {
+gulp.task('html', function () {
   const options = {
     removeComments: true, //清除HTML注释
     collapseWhitespace: true, //压缩HTML
@@ -172,9 +186,9 @@ gulp.task("html", function () {
     gulp
       .src(config.enter.html)
       .pipe(
-        fileinclude({
-          prefix: "@@",
-          basepath: "src/static/include", //引用文件路径
+        fileInclude({
+          prefix: '@@',
+          basepath: 'src/static/include', //引用文件路径
         })
       )
       // .pipe(htmlMin(options))
@@ -187,48 +201,27 @@ gulp.task("html", function () {
   );
 });
 
-gulp.task("browserSync", function () {
+gulp.task(
+  'pipeFile',
+  gulp.parallel(
+    'pipeLibs',
+    'concatResetCss',
+    'concatCommonScss',
+    'concatUtilsJs',
+    'concatCommonJS',
+    'scss',
+    'js',
+    'html'
+  )
+);
+gulp.task('browserSync', function () {
   browserSync({
     server: {
       baseDir: config.output,
     },
     port: 8081,
   });
-  gulp.watch(
-    ["src/**"],
-    gulp.parallel(
-      "pipeLibs",
-      "concatResetCss",
-      "concatCommonScss",
-      "concatUtilsJs",
-      "concatCommonJS",
-      "scss",
-      "js",
-      "html"
-    )
-  );
+  gulp.watch(['src/**'], {}, gulp.series('pipeFile'));
 });
 
-gulp.task(
-  "pipeFile",
-  gulp.parallel(
-    "pipeLibs",
-    "concatResetCss",
-    "concatCommonScss",
-    "concatUtilsJs",
-    "concatCommonJS",
-    "scss",
-    "js",
-    "html",
-    function (done) {
-      done();
-    }
-  )
-);
-
-gulp.task(
-  "default",
-  gulp.series("pipeFile", "browserSync", function (done) {
-    done();
-  })
-);
+module.exports = gulp.series('removeDir', 'pipeFile', 'browserSync');
